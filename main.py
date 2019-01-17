@@ -12,7 +12,7 @@ description = '''This bot is made to aid people who may struggle with command li
 cases the bot may trigger what response you would help - for example, the .live command will output directly into wipefest
 bot. With Raidbots, that is not the case.'''
 
-bot = commands.Bot(command_prefix='.', description=description)
+bot = commands.Bot(command_prefix='.', description=description, case_insensitive=True,pm_help=True)
 
 @bot.event
 async def on_ready():
@@ -26,19 +26,24 @@ async def on_message(message):
         await message.delete()
     await bot.process_commands(message)
 
-@bot.command()
-async def live(ctx, loglink='', death_thresh = '0', content='Please enter a character name and fightstyle. For example, .live <link> <death_threshold>'):
-    """Splits the log up to get the ID, then sends it to wipefest bot. """
+@bot.command(name="live", alias=['livelog', 'llog'])
+async def live(ctx, loglink='', death_thresh = '0', content=description):
+    """.live <loglink> <*Death Threshold> - Splits the log up to get the ID, then sends it to wipefest bot. """
     await bot_functions.livelog(ctx, loglink, death_thresh, content)
 
-@bot.command()
+@bot.command(name="affixes", aliases=['affix'])
 async def affixes(ctx):
-    """Gets list of affixes."""
+    """.affixes - Gets list of affixes."""
     await bot_functions.get_affixes(ctx)
 
-@bot.command()
+@bot.command(name="progress", aliases=['lookup', 'character','scores'])
 async def progress(ctx,name, realm):
-    """reeee"""
+    """.progress <name> <realm> - Return M+ Score + Raid Progression."""
     await bot_functions.get_progression(ctx,name, realm)
+    
+@bot.command()
+async def attend(ctx, loglink):
+    """.attend <log> = Who showed up?"""
+    await bot_functions.attendance(ctx, loglink)
 
 bot.run(myToken.return_token())

@@ -3,7 +3,18 @@ import time
 import math
 import json
 import requests
+import myToken
 
+async def logsplit(ctx, loglink):
+    parts = loglink.split('/')
+    try:
+        if parts[4]:
+            r_id_split = parts[4].split('#')
+            r_id = r_id_split[0]
+            return r_id
+    except IndexError:
+        return False
+        
 async def bot_ready(bot):
     print('Logged in as')
     print(bot.user.name)
@@ -16,19 +27,14 @@ async def livelog(ctx, loglink='', death_thresh = '0', content='Please enter a c
             ```.live <log link> [DeathThreshold]``` 
         though the death threshold is an optional parameter.''')
     else:
-        parts = loglink.split('/')
-        if parts[4]:
-            r_id_split = parts[4].split('#')
-            r_id = r_id_split[0]
-            out = '!wf l ' + r_id + ' -d ' + str(death_thresh)
-            linksend = await ctx.send(out)
-            time.sleep(5)
-            await linksend.delete()
-
-        else:
-            await ctx.send(""" Are you sure this is a correct log? 
-            https://www.warcraftlogs.com/reports/wfz4BZJhYa98VK32/#fight=last&type=healing is an example log. 
-            The text following the "#" is optional text that some logs may have.""")
+                r_id = await logsplit(ctx, loglink)
+                if r_id is not False:
+                    out = '!wf l ' + r_id + ' -d ' + str(death_thresh)
+                    linksend = await ctx.send(out)
+                    time.sleep(5)
+                    await linksend.delete()
+                else:
+                    await ctx.send("Invalid link given.")
 
 async def get_affixes(ctx):
     response = requests.get("https://raider.io/api/v1/mythic-plus/affixes?region=eu&locale=en")
@@ -56,4 +62,16 @@ async def get_progression(ctx, name, realm):
     await ctx.send(mythic_scores)
     await ctx.send(kill_prog)
 
-    
+async def attendance(ctx,loglink):
+    r_id = await logsplit(ctx, loglink)
+    if r_id is not False:
+        response = requests.get("https://www.warcraftlogs.com/v1/report/fights/"+r_id+"?api_key="+ myToken.getWCLKey())
+        get_info = json.loads(response.text)
+        friendlies = get_info["friendlies"]
+        friendly_fighters = ""
+
+        for i in friendlies:
+            friendly_fighters= friendly_fighters + i["name"] + " has been involved in "
+            fights = len(i["fights"])
+            friendly_fighters = friendly_fighters + str(fights) + " fights! \n"
+        await ctx.send(friendly_fighters)
